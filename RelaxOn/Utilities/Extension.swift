@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import UIKit
 
 extension Color {
     // Main Color
@@ -48,3 +47,4 @@ extension View {
         return nil
     }
 }
+

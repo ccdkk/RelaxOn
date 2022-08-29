@@ -36,12 +36,18 @@ struct CDCardView: View {
                     .fullScreenCover(item: $selectedMixedSound) { _ in
                         NewMusicView(data: data, userRepositoriesState: $userRepositoriesState)
                     }
+                    .fullScreenCover(isPresented: $isPresent) {
+                        NewMusicView(data: data, userRepositoriesState: $userRepositoriesState)
+                    }
             })
             Text(data.name)
                 .font(.system(size: 17, weight: .regular))
                 .foregroundColor(.systemGrey1)
         }
         .onOpenURL { url in
+            if url != data.url {
+                selectedMixedSound = nil
+            }
             isPresent = url == data.url
         }
     }

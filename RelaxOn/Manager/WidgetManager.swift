@@ -14,7 +14,7 @@ struct SmallWidgetData: Codable {
 }
 
 class WidgetManager {
-    static let suiteName = "group.widget.relaxOn"
+    static let suiteName = "group.relaxer.RelaxOnWidget"
     static let smallWidgetData = "smallWidgetData"
     static let widgetName = "RelaxOnWidget"
     

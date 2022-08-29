@@ -8,9 +8,10 @@
 import SwiftUI
 
 struct TimerNavigationLinkView: View {
+    @State private var isPresent = false
     var body: some View {
         VStack(spacing: 6) {
-            NavigationLink(destination : TimerSettingView()) {
+            NavigationLink(destination : TimerSettingView(), isActive: $isPresent) {
                 label
             }
             .navigationBarTitle("CD LIBRARY") // 백버튼 텍스트 내용
@@ -24,7 +25,11 @@ struct TimerNavigationLinkView: View {
                     .foregroundColor(.systemGrey1)
                 Spacer()
             }
-        }.padding(.horizontal, 20)
+        }
+        .padding(.horizontal, 20)
+        .onOpenURL { url in
+            self.isPresent = url == URL(string: "RelaxOn:///TimerSettingView")
+        }
     }
     
     var label: some View {

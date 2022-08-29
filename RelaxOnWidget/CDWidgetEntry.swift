@@ -14,6 +14,7 @@ struct CDWidgetEntry: TimelineEntry {
     var id: Int
     var name: String
     var url: URL?
+    var timerUrl: URL?
     
     init(date: Date = Date(), imageName: String = "Recipe5", id: Int = 100, name: String = "tempWidget") {
         self.date = date
@@ -21,6 +22,7 @@ struct CDWidgetEntry: TimelineEntry {
         self.id = id
         self.name = name
         self.url = WidgetManager.getURL(id: id)
+        self.timerUrl = URL(string: "RelaxOn:///TimerSettingView")
     }
 }
 
