@@ -10,7 +10,7 @@ import WidgetKit
 import SwiftUI
 
 struct RelaxOnWidgetEntryView : View {
-        @Environment(\.widgetFamily) var family
+    @Environment(\.widgetFamily) var family
     var entry: Provider.Entry
     
     var body: some View {
@@ -32,17 +32,18 @@ struct RelaxOnWidgetEntryView : View {
             switch family {
             case .accessoryCircular:
                 Gauge(value: 0.5) {
-                        
+                    
                 }
                 .gaugeStyle(.accessoryCircular)
                 .widgetURL(entry.timerUrl)
             case .accessoryRectangular:
                 Gauge(value: 0.7) {
-                   
+                    
                 }
                 .gaugeStyle(.accessoryLinear)
                 .widgetURL(entry.timerUrl)
             case .systemSmall:
+                let _ = print("hihihi")
                 VStack {
                     Image(entry.imageName)
                         .resizable()
