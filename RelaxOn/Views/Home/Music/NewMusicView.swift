@@ -23,6 +23,8 @@ struct NewMusicView: View {
     @State private var musicControlButtonWidth = 49.0
     @State private var musicPlayButtonWidth = 44.0
     
+    var timerManager = TimerManager.shared
+    
     @State var audioVolumes: (baseVolume: Float, melodyVolume: Float, whiteNoiseVolume: Float) = (0, 0, 0)
     @State private var offsetYOfControlView = UIScreen.main.bounds.height * 0.83 {
         didSet {
@@ -74,14 +76,16 @@ struct NewMusicView: View {
                 }
                 .padding(.top, UIScreen.main.bounds.height * 0.1)
                 
-                VolumeControlView(viewModel: viewModel, showVolumeControl: $showVolumeControl,
-                                  audioVolumes: $audioVolumes, userRepositoriesState: $userRepositoriesState)
+                VolumeControlView(showVolumeControl: $showVolumeControl,
+                                  audioVolumes: $audioVolumes,
+                                  userRepositoriesState: $userRepositoriesState,
+                                  viewModel: viewModel)
                 .cornerRadius(20)
                 .offset(y: offsetYOfControlView)
                 .gesture(
                     DragGesture()
                         .onChanged { value in
-                            var draggedHeight = value.translation.height
+                            let draggedHeight = value.translation.height
                             let deviceHalfHeight = UIScreen.main.bounds.height * 0.5
                             let gradient = draggedHeight / deviceHalfHeight
                             offsetYOfControlView += draggedHeight / 5
@@ -141,6 +145,7 @@ struct NewMusicView: View {
                     viewModel.fetchData(data: data)
                 }
                 self.isFetchFirstData = false
+                timerManager.currentMusicViewModel = self.viewModel
             }
             .onReceive(viewModel.$mixedSound, perform: { mixedSound in
                 guard let changedMixedSound = mixedSound else { return }
@@ -211,18 +216,33 @@ extension NewMusicView {
     @ViewBuilder
     func CDCoverView() -> some View {
         ZStack {
-            Image(viewModel.mixedSound?.baseSound?.imageName ?? "")
-                .resizable()
-                .opacity(0.5)
-                .frame(width: .infinity, height: .infinity)
-            Image(viewModel.mixedSound?.melodySound?.imageName ?? "")
-                .resizable()
-                .opacity(0.5)
-                .frame(width: .infinity, height: .infinity)
-            Image(viewModel.mixedSound?.whiteNoiseSound?.imageName ?? "")
-                .resizable()
-                .opacity(0.5)
-                .frame(width: .infinity, height: .infinity)
+            if let baseSoundImageName = viewModel.mixedSound?.baseSound?.fileName {
+                    Image(baseSoundImageName)
+                        .resizable()
+                        .opacity(baseSoundImageName == "music" ? 0.0 : 0.5)
+                        .frame(width: .infinity, height: .infinity)
+            }
+            if let melodySoundImageName = viewModel.mixedSound?.melodySound?.fileName {
+                    Image(melodySoundImageName)
+                        .resizable()
+                        .opacity(melodySoundImageName == "music" ? 0.0 : 0.5)
+                        .frame(width: .infinity, height: .infinity)
+            }
+            if let whiteNoiseSoundImageName = viewModel.mixedSound?.whiteNoiseSound?.fileName {
+                let _ = print(whiteNoiseSoundImageName, "왜")
+                    Image(whiteNoiseSoundImageName)
+                        .resizable()
+                        .opacity(whiteNoiseSoundImageName == "music" ? 0.0 : 0.5)
+                        .frame(width: .infinity, height: .infinity)
+            }
+//            Image(viewModel.mixedSound?.melodySound?.imageName ?? "")
+//                .resizable()
+//                .opacity(0.5)
+//                .frame(width: .infinity, height: .infinity)
+//            Image(viewModel.mixedSound?.whiteNoiseSound?.imageName ?? "")
+//                .resizable()
+//                .opacity(0.5)
+//                .frame(width: .infinity, height: .infinity)
         }
     }
     
@@ -261,7 +281,7 @@ extension NewMusicView {
                     userRepositoriesState.remove(at: index ?? -1)
                     
                     let data = getEncodedData(data: userRepositories)
-                    UserDefaultsManager.shared.standard.set(data, forKey: UserDefaultsManager.shared.recipes)
+                    UserDefaultsManager.shared.recipes = data
                     userRepositoriesState = userRepositories
                     presentationMode.wrappedValue.dismiss()
                 } label: {

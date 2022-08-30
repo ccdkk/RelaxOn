@@ -8,16 +8,63 @@
 import SwiftUI
 
 struct VolumeControlView: View {
-    @ObservedObject var viewModel: MusicViewModel
+    // MARK: - State Properties
+    @State var hasShowAlert: Bool = false
     @Binding var showVolumeControl: Bool
     @Binding var audioVolumes: (baseVolume: Float, melodyVolume: Float, whiteNoiseVolume: Float)
     @Binding var userRepositoriesState: [MixedSound]
+    @ObservedObject var viewModel: MusicViewModel
     
+    // MARK: - General Properties
     let baseAudioManager = AudioManager()
     let melodyAudioManager = AudioManager()
     let whiteNoiseAudioManager = AudioManager()
-    @State var hasShowAlert: Bool = false
     
+    // MARK: - Methods
+    private func saveNewVolume() {
+        guard let selectedMixedSound = viewModel.mixedSound else { return }
+        guard let localBaseSound = viewModel.mixedSound?.baseSound,
+              let localMelodySound = viewModel.mixedSound?.melodySound,
+              let localWhiteNoiseSound = viewModel.mixedSound?.whiteNoiseSound else { return }
+        
+        let newBaseSound = Sound(id: localBaseSound.id,
+                                 name: localBaseSound.name,
+                                 soundType: localBaseSound.soundType,
+                                 audioVolume: audioVolumes.baseVolume,
+                                 fileName: localBaseSound.fileName)
+        let newMelodySound = Sound(id: localMelodySound.id,
+                                   name: localMelodySound.name,
+                                   soundType: localMelodySound.soundType,
+                                   audioVolume: audioVolumes.melodyVolume,
+                                   fileName: localMelodySound.fileName)
+        
+        let newWhiteNoiseSound = Sound(id: localWhiteNoiseSound.id,
+                                    name: localWhiteNoiseSound.name,
+                                    soundType: localWhiteNoiseSound.soundType,
+                                    audioVolume: audioVolumes.whiteNoiseVolume,
+                                    fileName: localWhiteNoiseSound.fileName)
+        
+        let newMixedSound = MixedSound(name: selectedMixedSound.name,
+                                       baseSound: newBaseSound,
+                                       melodySound: newMelodySound,
+                                       whiteNoiseSound: newWhiteNoiseSound,
+                                       fileName: selectedMixedSound.fileName)
+        
+        let index = userRepositoriesState.firstIndex { mixedSound in
+            mixedSound.name == selectedMixedSound.name
+        }
+        
+        userRepositories.remove(at: index ?? -1)
+        userRepositories.insert(newMixedSound, at: index ?? -1)
+        
+        userRepositoriesState.remove(at: index ?? -1)
+        userRepositoriesState.insert(newMixedSound, at: index ?? -1)
+        
+        let data = getEncodedData(data: userRepositories)
+        UserDefaultsManager.shared.recipes = data
+    }
+    
+    // MARK: - Life Cycles
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
@@ -42,13 +89,34 @@ struct VolumeControlView: View {
             }
         }
     }
-    
+}
+
+// MARK: - ViewBuilder
+extension VolumeControlView {
+    @ViewBuilder
+    func UpperPartOfVolumeControlView() -> some View {
+        VStack {
+            Capsule()
+                .frame(width: 72, height: 5)
+                .foregroundColor(.systemGrey1)
+                .padding(EdgeInsets(top: 8, leading: 0, bottom: 27, trailing: 0))
+            HStack {
+                Image(systemName: "waveform")
+                    .foregroundColor(.relaxDimPurple)
+                Text("MATERIAL VOLUME")
+                    .foregroundColor(.white)
+                    .font(.system(size: 17))
+                Spacer()
+            }
+            .padding(.leading, 20)
+        }
+    }
     
     @ViewBuilder
     func SoundControlSlider(item: Sound) -> some View {
         HStack {
             VStack {
-                Image(item.imageName)
+                Image(item.fileName)
                     .resizable()
                     .frame(width: 60, height: 60)
                     .cornerRadius(4)
@@ -60,11 +128,11 @@ struct VolumeControlView: View {
             
             VStack (alignment: .leading){
                 HStack {
-                    Text(item.soundType.rawValue.uppercased())
+                    Text(LocalizedStringKey(item.soundType.rawValue.uppercased()))
                         .font(.system(size: 12, weight: .semibold, design: .default))
                         .foregroundColor(.systemGrey3)
                     
-                    Text(item.name)
+                    Text(LocalizedStringKey(item.name))
                         .font(.system(size: 17, weight: .semibold, design: .default))
                         .foregroundColor(.systemGrey1)
                 }
@@ -129,71 +197,6 @@ struct VolumeControlView: View {
             }
         }
         .padding(.horizontal, 20)
-    }
-    
-    private func saveNewVolume() {
-        guard let selectedMixedSound = viewModel.mixedSound else { return }
-        guard let localBaseSound = viewModel.mixedSound?.baseSound,
-              let localMelodySound = viewModel.mixedSound?.melodySound,
-              let localWhiteNoiseSound = viewModel.mixedSound?.whiteNoiseSound else { return }
-        
-        let newBaseSound = Sound(id: localBaseSound.id,
-                                 name: localBaseSound.name,
-                                 soundType: localBaseSound.soundType,
-                                 audioVolume: audioVolumes.baseVolume,
-                                 imageName: localBaseSound.imageName)
-        let newMelodySound = Sound(id: localMelodySound.id,
-                                   name: localMelodySound.name,
-                                   soundType: localMelodySound.soundType,
-                                   audioVolume: audioVolumes.melodyVolume,
-                                   imageName: localMelodySound.imageName)
-        
-        let newWhiteNoiseSound = Sound(id: localWhiteNoiseSound.id,
-                                    name: localWhiteNoiseSound.name,
-                                    soundType: localWhiteNoiseSound.soundType,
-                                    audioVolume: audioVolumes.whiteNoiseVolume,
-                                    imageName: localWhiteNoiseSound.imageName)
-        
-        let newMixedSound = MixedSound(id: selectedMixedSound.id,
-                                       name: selectedMixedSound.name,
-                                       baseSound: newBaseSound,
-                                       melodySound: newMelodySound,
-                                       whiteNoiseSound: newWhiteNoiseSound,
-                                       imageName: selectedMixedSound.imageName)
-        
-        let index = userRepositoriesState.firstIndex { mixedSound in
-            mixedSound.name == selectedMixedSound.name
-        }
-        
-        userRepositories.remove(at: index ?? -1)
-        userRepositories.insert(newMixedSound, at: index ?? -1)
-        
-        userRepositoriesState.remove(at: index ?? -1)
-        userRepositoriesState.insert(newMixedSound, at: index ?? -1)
-        
-        let data = getEncodedData(data: userRepositories)
-        UserDefaultsManager.shared.standard.set(data, forKey: UserDefaultsManager.shared.recipes)
-    }
-}
-
-extension VolumeControlView {
-    @ViewBuilder
-    func UpperPartOfVolumeControlView() -> some View {
-        VStack {
-            Capsule()
-                .frame(width: 72, height: 5)
-                .foregroundColor(.systemGrey1)
-                .padding(EdgeInsets(top: 8, leading: 0, bottom: 27, trailing: 0))
-            HStack {
-                Image(systemName: "waveform")
-                    .foregroundColor(.relaxDimPurple)
-                Text("MATERIAL VOLUME")
-                    .foregroundColor(.white)
-                    .font(.system(size: 17))
-                Spacer()
-            }
-            .padding(.leading, 20)
-        }
     }
 }
 

@@ -11,13 +11,14 @@ import MediaPlayer
 struct CdLibraryView: View {
     
     @State var showOnboarding: Bool = false
+    @State var userRepositoriesData = userRepositories
     
     var body: some View {
         NavigationView {
             VStack {
                 TimerNavigationLinkView()
                     .padding(.top, 56)
-                CDListView()
+                CDListView(userRepositoriesState: userRepositoriesData)
                 Spacer()
             }
             .background(Color.relaxBlack)
@@ -26,7 +27,7 @@ struct CdLibraryView: View {
         .preferredColorScheme(.dark)
         .navigationViewStyle(.stack)
         .onAppear() {
-            let notFirstVisit = UserDefaultsManager.shared.standard.bool(forKey: UserDefaultsManager.shared.notFirstVisit)
+            let notFirstVisit = UserDefaultsManager.shared.notFirstVisit
             showOnboarding = notFirstVisit ? false : true
             
             UIApplication.shared.beginReceivingRemoteControlEvents()
@@ -38,7 +39,10 @@ struct CdLibraryView: View {
                    print(error.localizedDescription)
                }
         }
-        .fullScreenCover(isPresented: $showOnboarding, content: {
+        .fullScreenCover(isPresented: $showOnboarding, onDismiss: {
+            print("닫힘")
+            userRepositoriesData = userRepositories
+        } ,content: {
             OnboardingView(showOnboarding: $showOnboarding)
         })
     }

@@ -8,8 +8,9 @@
 import SwiftUI
 
 struct CDListView: View {
+    // MARK: - State Properties
     @State var isActive: Bool = false
-    @State var userRepositoriesState: [MixedSound] = userRepositories
+    @State var userRepositoriesState: [MixedSound]
     @State var selectedImageNames = (
         base: "",
         melody: "",
@@ -20,23 +21,25 @@ struct CDListView: View {
     @State private var showingActionSheet = false
     @State var isShwoingMusicView = false
     
-    init(userRepositoriesState: [MixedSound] = userRepositories){
-        Theme.navigationBarColors(background: UIColor(named: "RelaxBlack") ?? .black, titleColor: UIColor(named: "RelaxDimPurple") ?? .white)
+    // MARK: - Life Cycles
+    init(userRepositoriesState: [MixedSound]) {
+        UINavigationBar.appearance().tintColor = UIColor.relaxDimPurple ?? .white
         self.userRepositoriesState = userRepositoriesState
     }
     
     var body: some View {
         VStack {
-            libraryHeader
-            
+            LibraryHeader
             ScrollView(.vertical, showsIndicators: false) {
 
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), alignment: .top), count: 2), spacing: 18) {
-                    plusCDImage.disabled(isEditMode)
+                    PlusCDImage
+                        .disabled(isEditMode)
 
                     ForEach(userRepositoriesState.reversed()){ mixedSound in
-
-                        CDCardView(data: mixedSound, isShwoingMusicView: $isShwoingMusicView, userRepositoriesState: $userRepositoriesState)
+                        CDCardView(data: mixedSound,
+                                   isShwoingMusicView: $isShwoingMusicView,
+                                   userRepositoriesState: $userRepositoriesState)
                             .disabled(isEditMode)
                             .overlay(alignment : .bottomTrailing) {
                                 if isEditMode {
@@ -69,7 +72,7 @@ struct CDListView: View {
         }
         .padding()
         .onAppear {
-            if let data = UserDefaultsManager.shared.standard.data(forKey: UserDefaultsManager.shared.recipes) {
+            if let data = UserDefaultsManager.shared.recipes {
                 do {
                     let decoder = JSONDecoder()
                     userRepositories = try decoder.decode([MixedSound].self, from: data)
@@ -80,9 +83,37 @@ struct CDListView: View {
                 }
             }
         }
+        .onChange(of: userRepositories) { newValue in
+            if let data = UserDefaultsManager.shared.recipes {
+                do {
+                    let decoder = JSONDecoder()
+                    
+                    userRepositories = try decoder.decode([MixedSound].self, from: data)
+                    userRepositoriesState = userRepositories
+                    print("help : \(userRepositories)")
+
+                } catch {
+                    print("Unable to Decode Note (\(error))")
+                }
+            }
+        }
         .onChange(of: isShwoingMusicView) { newValue in
             if isShwoingMusicView == false {
-                if let data = UserDefaultsManager.shared.standard.data(forKey: UserDefaultsManager.shared.recipes) {
+                if let data = UserDefaultsManager.shared.recipes {
+                    do {
+                        let decoder = JSONDecoder()
+                        
+                        userRepositories = try decoder.decode([MixedSound].self, from: data)
+                        userRepositoriesState = userRepositories
+                    } catch {
+                        print("Unable to Decode Note (\(error))")
+                    }
+                }
+            }
+        }
+        .onChange(of: isShwoingMusicView) { newValue in
+            if isShwoingMusicView == false {
+                if let data = UserDefaultsManager.shared.recipes {
                     do {
                         let decoder = JSONDecoder()
                         
@@ -112,8 +143,11 @@ struct CDListView: View {
             Text("These CDs will be deleted from your library")
         }
     }
-    
-    var libraryHeader: some View {
+}
+
+// MARK: - View Properties
+extension CDListView {
+    var LibraryHeader: some View {
         HStack {
             Text("CD LIBRARY")
                 .font(.title)
@@ -143,7 +177,7 @@ struct CDListView: View {
         }
     }
     
-    var plusCDImage: some View {
+    var PlusCDImage: some View {
         VStack(alignment: .leading) {
             NavigationLink(destination: StudioView(rootIsActive: self.$isActive), isActive: self.$isActive) {
                 ZStack {

@@ -57,15 +57,15 @@ struct MusicRenameView: View {
     @ViewBuilder
     func CDCoverView() -> some View {
         ZStack {
-            Image(mixedSound.baseSound?.imageName ?? "")
+            Image(mixedSound.baseSound?.fileName ?? "")
                 .resizable()
                 .opacity(0.5)
             //                .frame(width: .infinity, height: .infinity)
-            Image(mixedSound.melodySound?.imageName ?? "")
+            Image(mixedSound.melodySound?.fileName ?? "")
                 .resizable()
                 .opacity(0.5)
             //                .frame(width: .infinity, height: .infinity)
-            Image(mixedSound.whiteNoiseSound?.imageName ?? "")
+            Image(mixedSound.whiteNoiseSound?.fileName ?? "")
                 .resizable()
                 .opacity(0.5)
             //                .frame(width: .infinity, height: .infinity)
@@ -103,12 +103,11 @@ struct MusicRenameView: View {
         .opacity(textEntered.isEmpty ? 0.5 : 1)
         .padding()
         .onTapGesture {
-            let renamedMixedSound = MixedSound(id: mixedSound.id,
-                                               name: textEntered,
+            let renamedMixedSound = MixedSound(name: textEntered,
                                                baseSound: mixedSound.baseSound,
                                                melodySound: mixedSound.melodySound,
                                                whiteNoiseSound: mixedSound.whiteNoiseSound,
-                                               imageName: recipeRandomName.randomElement()!)
+                                               fileName: recipeRandomName.randomElement()!)
             
             let index = userRepositoriesState.firstIndex { element in
                 element.name == mixedSound.name
@@ -121,7 +120,7 @@ struct MusicRenameView: View {
             userRepositoriesState.insert(renamedMixedSound, at: index ?? -1)
             
             let data = getEncodedData(data: userRepositories)
-            UserDefaultsManager.shared.standard.set(data, forKey: UserDefaultsManager.shared.recipes)
+            UserDefaultsManager.shared.recipes = data
             presentationMode.wrappedValue.dismiss()
         }
     }
