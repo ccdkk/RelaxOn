@@ -22,28 +22,26 @@ struct Provider: TimelineProvider {
     
     func getTimeline(in context: Context, completion: @escaping (Timeline<CDLockScreenWidgetEntry>) -> Void)  {
         var entries: [CDLockScreenWidgetEntry] = []
-        var currentDate = Date()
-        let nowDate = Date()
-        let oneMinute: TimeInterval = 60
+        let currentDate = Date()
         
-        if let timerData = UserDefaults(suiteName: WidgetManager.suiteName)!.value(forKey: WidgetManager.lockScreenWidgetData) as? TimeInterval {
-            let endDate = currentDate + timerData
-            var settedSeconds = timerData
+        if var timerData = UserDefaults(suiteName: WidgetManager.suiteName)!.value(forKey: WidgetManager.lockScreenWidgetData) as? Double {
+            let endDate = Calendar.current.date(byAdding: .second, value: Int(timerData), to: currentDate)
+            var addedSeconds: Double = -60
             
-            while currentDate < endDate {
-                let entry = CDLockScreenWidgetEntry(date: nowDate, endDate: endDate, settedSeconds: settedSeconds)
+            while timerData >= 0 {
+                let entry = CDLockScreenWidgetEntry(date: currentDate + addedSeconds, startDate: currentDate, endDate: endDate ?? Date(), settedSeconds: timerData)
                 entries.append(entry)
-                currentDate += oneMinute
-                settedSeconds -= 60
+                timerData -= 60
+                addedSeconds += 60
             }
-            let timeline = Timeline(entries: entries, policy: .atEnd)
+            let timeline = Timeline(entries: entries, policy: .never)
             completion(timeline)
-            
-            if currentDate >= endDate {
-                let entry = CDLockScreenWidgetEntry(date: nowDate, endDate: endDate, settedSeconds: 0)
-                let timeline = Timeline(entries: [entry], policy: .never)
-                completion(timeline)
-            }
+            //MARK: - 주석 나중에 Dake가 삭제하겠습니다.
+            //            if currentDate >= endDate {
+            //                let entry = CDLockScreenWidgetEntry(date: nowDate, endDate: endDate, settedSeconds: 0)
+            //                let timeline = Timeline(entries: [entry], policy: .never)
+            //                completion(timeline)
+            //            }
         } else {
             let entry = CDLockScreenWidgetEntry()
             entries.append(entry)
@@ -56,14 +54,15 @@ struct Provider: TimelineProvider {
 @available(iOS 16, *)
 struct CDLockScreenWidgetEntry: TimelineEntry {
     let date: Date
+    let startDate: Date
     let endDate: Date
     let timerUrl: URL?
     let settedSeconds: Double
     
-    init(date: Date = Date(), endDate: Date = Date(), settedSeconds: Double = 0.0) {
+    init(date: Date = Date(), startDate: Date = Date(), endDate: Date = Date() + 0.1, settedSeconds: Double = 0.0) {
         self.date = date
+        self.startDate = startDate
         self.endDate = endDate
-
         self.timerUrl = URL(string: "RelaxOn:///TimerSettingView")
         self.settedSeconds = settedSeconds
     }
@@ -78,15 +77,18 @@ struct RelaxOnLockScreenWidgetExtensionEntryView : View {
     var body: some View {
         switch family {
         case .accessoryRectangular:
-            HStack{
-                ProgressView(timerInterval: entry.date...entry.endDate) {
+            ProgressView(timerInterval: entry.date...entry.endDate) {
+                HStack {
+                    //TODO: river가 올려주신 R아이콘으로 바꿔야함
                     Image("AppIcon")
-                } currentValueLabel: {
-                    
+                    Spacer()
+                    Text("\(Int(entry.settedSeconds / 60)) min")
                 }
-                .progressViewStyle(.linear)
-                Text("\(Int(entry.settedSeconds / 60))")
+            } currentValueLabel: {
+                //MARK: - default로 주는 타이머가 멈춰있어서 비워놓음
             }
+            .progressViewStyle(.linear)
+            .widgetURL(entry.timerUrl)
         default:
             EmptyView()
         }
